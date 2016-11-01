@@ -1,0 +1,13 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{B9D55DC4-491A-9FFF-21DB-AEA67E968B74}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "terra",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
