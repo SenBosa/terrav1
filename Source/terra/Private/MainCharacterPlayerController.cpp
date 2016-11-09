@@ -14,6 +14,7 @@ AMainCharacterPlayerController::AMainCharacterPlayerController()
 	//bShowMouseCursor = true;
 	//DefaultMouseCursor = EMouseCursor::Crosshairs;
 	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = true;
 
 	speed = 0.0f;
 	speedScale = 400.0f;
