@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "GameFramework/PlayerController.h"
+#include "GameFramework/Character.h"
 #include "MainCharacterPlayerController.generated.h"
 
 /**
@@ -57,14 +57,24 @@ public:
 
 protected:
 
-	/** True if the controlled character should navigate to the mouse cursor. */
-	uint32 bMoveToMouseCursor : 1;
+	virtual void Tick(float DeltaTime) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	// Begin PlayerController interface
-	/*virtual*/ void PlayerTick(float DeltaTime) /*override*/;
-	///*virtual*/ void SetupInputComponent() /*override*/;
-	// End PlayerController interface
-
+	void AddXMovement(float axisValue);
+	void AddYMovement(float axisValue);
+	void AddXRotation(float axisValue);
+	void AddYRotation(float axisValue);
 	
-	
+	void OnSpell1Use();
+	void OnSpell2Use();
+	void OnSpell3Use();
+	void ActivateBlocking();
+	void DeactivateBlocking();
+	void ActivateDodging();
+	void DeactivateDodging();
+	void ActivateLightAttack();
+	void DeactivateLightAttack();
+	void ActivateHeavyAttack();
+	void DeactivateHeavyAttack();
+	void EnterCombat();
 };
