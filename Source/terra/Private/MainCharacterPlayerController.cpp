@@ -29,6 +29,11 @@ AMainCharacterPlayerController::AMainCharacterPlayerController()
 	attackIndex = 0;
 	inCombatDuration = 5.0f;
 	inCombatTimer = 0.0f;
+	isRotating = false;
+	rXAxis = 0.0f;
+	rYAxis = 0.0f;
+	turnRate = 5.0f;
+	dodgePotency = 2500.0f;
 }
 
 void AMainCharacterPlayerController::Tick(float deltaTime)
@@ -36,9 +41,69 @@ void AMainCharacterPlayerController::Tick(float deltaTime)
 	Super::Tick(deltaTime);
 
 	FVector2D v2 = FVector2D(xMoveDir, yMoveDir);
-	speed = FMath::Clamp(v2.Size() * speedScale, 0.0f, 400.0f);
+	float moveSpeed = FMath::Clamp(v2.Size(), 0.0f, 1.0f);
+	speed = moveSpeed * speedScale;
 
-	if (isInCombat)
+	AddMovementInput(FVector(yMoveDir, xMoveDir, 0.0f), moveSpeed, false);
+
+	if (rXAxis + rYAxis == 0)
+	{
+		isRotating = false;
+	}
+	else
+
+	{
+		isRotating = true;
+	}
+
+	float targetAngle;
+
+	if (isRotating)
+	{
+		xFaceDir = rXAxis;
+		yFaceDir = rYAxis;
+	}
+	else
+	{
+		xFaceDir = xMoveDir;
+		yFaceDir = yMoveDir;
+	}
+
+	targetAngle = FMath::Atan2(xFaceDir, yFaceDir) * 180.0f / PI;
+
+	Controller->GetControlRotation();
+
+	if (Controller)
+	{
+		float yaw;
+		//yaw = FMath::Lerp(Controller->GetControlRotation().Yaw, targetAngle, deltaTime * moveSpeed * 5.0f);
+
+		FRotator rotator;
+		//rotator = FRotator(Controller->GetControlRotation().Pitch, yaw, Controller->GetControlRotation().Roll);
+
+		float deltaTurn;
+
+		rotator = Controller->GetControlRotation();
+		if (isRotating)
+		{
+			deltaTurn = turnRate;
+		}
+		else
+		{
+			deltaTurn = moveSpeed * turnRate;
+		}
+		
+		//FString::SanitizeFloat(deltaTurn)
+		////UE_LOG(LogTemp, Warning, TEXT());
+		//UE_LOG(LogTemp, Warning, TEXT("%f"), deltaTurn);
+
+		yaw = FMath::FixedTurn(Controller->GetControlRotation().Yaw, targetAngle, moveSpeed * turnRate);
+		rotator.Yaw = yaw;
+		
+		Controller->SetControlRotation(rotator);
+	}
+
+	if (isInCombat && isBlocking == false && isDodging == false && isAttacking == false)
 	{
 		inCombatTimer -= deltaTime;
 
@@ -83,24 +148,32 @@ void AMainCharacterPlayerController::AddXMovement(float axisValue)
 {
 	xMoveDir = axisValue;
 
-	AddMovementInput(FVector(0.0f, 1.0f, 0.0f), xMoveDir, false);
+	if (isAttacking != true)
+	{
+		//AddMovementInput(FVector(0.0f, 1.0f, 0.0f), xMoveDir, false);
+	}
 }
 
 void AMainCharacterPlayerController::AddYMovement(float axisValue)
 {
 	yMoveDir = axisValue;
 
-	AddMovementInput(FVector(1.0f, 0.0f, 0.0f), yMoveDir, false);
+	if (isAttacking != true)
+	{
+		//AddMovementInput(FVector(1.0f, 0.0f, 0.0f), yMoveDir, false);
+	}
 }
 
 void AMainCharacterPlayerController::AddXRotation(float axisValue)
 {
-	xFaceDir = FMath::Clamp(-1.0f, 1.0f, xFaceDir + axisValue);
+	rXAxis = axisValue;
+	//xFaceDir = FMath::Clamp(-1.0f, 1.0f, xFaceDir + axisValue);
 }
 
 void AMainCharacterPlayerController::AddYRotation(float axisValue)
 {
-	yFaceDir = FMath::Clamp(-1.0f, 1.0f, yFaceDir + axisValue);
+	rYAxis = -axisValue;
+	//yFaceDir = FMath::Clamp(-1.0f, 1.0f, yFaceDir + axisValue);
 }
 
 void AMainCharacterPlayerController::OnSpell1Use()
@@ -133,6 +206,27 @@ void AMainCharacterPlayerController::ActivateDodging()
 {
 	EnterCombat();
 	isDodging = true;
+
+	//AddMovementInput(FVector(0.0f, 1.0f, 0.0f), dodgePotency, true);
+
+	float x, y;
+	if (isRotating)
+	{
+		x = rXAxis;
+		y = rYAxis;
+	}
+	else if (xMoveDir + yMoveDir == 0.0f)
+	{
+		x = FMath::Sin(Controller->GetControlRotation().Yaw * PI / 180.0f);
+		y = FMath::Cos(Controller->GetControlRotation().Yaw * PI / 180.0f);
+	}
+	else
+	{
+		x = xMoveDir;
+		y = yMoveDir;
+	}
+
+	LaunchCharacter(FVector(y * dodgePotency, x * dodgePotency, 0.0f), true, false);
 }
 
 void AMainCharacterPlayerController::DeactivateDodging()

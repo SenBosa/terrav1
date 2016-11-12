@@ -55,6 +55,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
 	float inCombatTimer;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	bool isRotating;
+
+	float rXAxis;
+	float rYAxis;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	float turnRate;
+
+	float dodgePotency;
+
 protected:
 
 	virtual void Tick(float DeltaTime) override;

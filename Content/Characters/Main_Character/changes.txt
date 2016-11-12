@@ -1,0 +1,9 @@
+pause between dashes
+no movement while attacking
+dodge towards where character is moving not where character is facing
+attack animations are delayed and can be continued it pressed again within certain timeframe
+line up dash timing better with animation
+speed up attack animation
+half speed while blocking
+dodge animation should stop after first movement burst regardless of whether trigger is held down or not
+turning should be instant
