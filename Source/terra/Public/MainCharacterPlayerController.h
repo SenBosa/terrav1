@@ -16,60 +16,68 @@ class TERRA_API AMainCharacterPlayerController : public ACharacter
 public:
 	AMainCharacterPlayerController();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	float speed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
 	float speedScale;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	float xMoveDir;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	float yMoveDir;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	float xFaceDir;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	float yFaceDir;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	float xMoveRelativeToFaceDir;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	float yMoveRelativeToFaceDir;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	bool isInCombat;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	bool isAttacking;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	bool isBlocking;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	bool isDodging;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	int attackIndex;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
 	float inCombatDuration;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	float inCombatTimer;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	bool isRotating;
-
-	float rXAxis;
-	float rYAxis;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
 	float turnRate;
 
+	float rXAxis;
+	float rYAxis;
 	float dodgePotency;
 
 protected:
 
-	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void Tick(float DeltaTime) override;
+
+	void PerformMovement(float axisScale);
+	void PerformRotation(float axisScale);
 
 	void AddXMovement(float axisValue);
 	void AddYMovement(float axisValue);

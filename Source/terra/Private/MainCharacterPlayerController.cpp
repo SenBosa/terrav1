@@ -36,86 +36,6 @@ AMainCharacterPlayerController::AMainCharacterPlayerController()
 	dodgePotency = 2500.0f;
 }
 
-void AMainCharacterPlayerController::Tick(float deltaTime)
-{
-	Super::Tick(deltaTime);
-
-	FVector2D v2 = FVector2D(xMoveDir, yMoveDir);
-	float moveSpeed = FMath::Clamp(v2.Size(), 0.0f, 1.0f);
-	speed = moveSpeed * speedScale;
-
-	AddMovementInput(FVector(yMoveDir, xMoveDir, 0.0f), moveSpeed, false);
-
-	if (rXAxis + rYAxis == 0)
-	{
-		isRotating = false;
-	}
-	else
-
-	{
-		isRotating = true;
-	}
-
-	float targetAngle;
-
-	if (isRotating)
-	{
-		xFaceDir = rXAxis;
-		yFaceDir = rYAxis;
-	}
-	else
-	{
-		xFaceDir = xMoveDir;
-		yFaceDir = yMoveDir;
-	}
-
-	targetAngle = FMath::Atan2(xFaceDir, yFaceDir) * 180.0f / PI;
-
-	Controller->GetControlRotation();
-
-	if (Controller)
-	{
-		float yaw;
-		//yaw = FMath::Lerp(Controller->GetControlRotation().Yaw, targetAngle, deltaTime * moveSpeed * 5.0f);
-
-		FRotator rotator;
-		//rotator = FRotator(Controller->GetControlRotation().Pitch, yaw, Controller->GetControlRotation().Roll);
-
-		float deltaTurn;
-
-		rotator = Controller->GetControlRotation();
-		if (isRotating)
-		{
-			deltaTurn = turnRate;
-		}
-		else
-		{
-			deltaTurn = moveSpeed * turnRate;
-		}
-		
-		//FString::SanitizeFloat(deltaTurn)
-		////UE_LOG(LogTemp, Warning, TEXT());
-		//UE_LOG(LogTemp, Warning, TEXT("%f"), deltaTurn);
-
-		yaw = FMath::FixedTurn(Controller->GetControlRotation().Yaw, targetAngle, moveSpeed * turnRate);
-		rotator.Yaw = yaw;
-		
-		Controller->SetControlRotation(rotator);
-	}
-
-	if (isInCombat && isBlocking == false && isDodging == false && isAttacking == false)
-	{
-		inCombatTimer -= deltaTime;
-
-		if (inCombatTimer <= 0)
-		{
-			isInCombat = false;
-		}
-	}
-
-	//UE_LOG(LogTemp, Warning, TEXT("Tick"));
-}
-
 void AMainCharacterPlayerController::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// set up gameplay key bindings
@@ -144,24 +64,143 @@ void AMainCharacterPlayerController::SetupPlayerInputComponent(class UInputCompo
 	PlayerInputComponent->BindAction("HeavyAttack", IE_Released, this, &AMainCharacterPlayerController::DeactivateHeavyAttack);
 }
 
-void AMainCharacterPlayerController::AddXMovement(float axisValue)
+void AMainCharacterPlayerController::Tick(float deltaTime)
 {
-	xMoveDir = axisValue;
+	Super::Tick(deltaTime);
+
+	//  Get the scale of analog input
+	FVector2D v2 = FVector2D(xMoveDir, yMoveDir);
+	float axisScale = FMath::Clamp(v2.Size(), 0.0f, 1.0f);
+
+	PerformMovement(axisScale);
+	PerformRotation(axisScale);
+
+	/*if (isInCombat && isBlocking == false && isDodging == false && isAttacking == false)
+	{
+		inCombatTimer -= deltaTime;
+
+		if (inCombatTimer <= 0)
+		{
+			isInCombat = false;
+		}
+	}*/
+
+	isInCombat = true;
+}
+
+void AMainCharacterPlayerController::PerformMovement(float axisScale)
+{
+	// Multiply the analog input axis by the scale of our speed
+	speed = axisScale * speedScale;
 
 	if (isAttacking != true)
 	{
-		//AddMovementInput(FVector(0.0f, 1.0f, 0.0f), xMoveDir, false);
+		AddMovementInput(FVector(yMoveDir, xMoveDir, 0.0f), axisScale, false);
 	}
+}
+
+void AMainCharacterPlayerController::PerformRotation(float axisScale)
+{
+	// Check if right analog has any input
+	if (rXAxis + rYAxis == 0)
+	{
+		isRotating = false;
+	}
+	else
+	{
+		isRotating = true;
+	}
+
+	float x, y, targetAngle;
+
+	// If right analog stick has any input, have character face that direction
+	// Otherwise have character face the direction they are moving
+	if (isRotating)
+	{
+		x = rXAxis;
+		y = rYAxis;
+	}
+	else
+	{
+		x = xMoveDir;
+		y = yMoveDir;
+	}
+
+	targetAngle = FMath::Atan2(x, y) * 180.0f / PI;
+
+	Controller->GetControlRotation();
+
+	if (Controller)
+	{
+		float yaw;
+		FRotator rotator;
+		float deltaTurn;
+
+		rotator = Controller->GetControlRotation();
+
+		// If right analog stick has any input, have character turn to that direction ASAP
+		// Otherwise have character turn to the direction he is moving in relative to the speed he is moving
+		if (isRotating)
+		{
+			deltaTurn = turnRate;
+		}
+		else
+		{
+			deltaTurn = axisScale * turnRate;
+		}
+
+		//FString::SanitizeFloat(deltaTurn)
+		////UE_LOG(LogTemp, Warning, TEXT());
+		//UE_LOG(LogTemp, Warning, TEXT("%f"), deltaTurn);
+
+		yaw = FMath::FixedTurn(Controller->GetControlRotation().Yaw, targetAngle, axisScale * turnRate);
+		rotator.Yaw = yaw;
+
+		Controller->SetControlRotation(rotator);
+	}
+
+	// Set Face Direction values from Controllers Rotation
+	xFaceDir = FMath::Sin(Controller->GetControlRotation().Yaw * PI / 180.0f);
+	yFaceDir = FMath::Cos(Controller->GetControlRotation().Yaw * PI / 180.0f);
+
+	float faceAngle, moveAngle, deltaAngle;
+
+	faceAngle = FMath::Atan2(xFaceDir, yFaceDir) * 180.0f / PI;
+	moveAngle = FMath::Atan2(xMoveDir, yMoveDir) * 180.0f / PI;
+
+	if (axisScale == 0.0f)
+	{
+		xMoveRelativeToFaceDir = 0.0f;
+		yMoveRelativeToFaceDir = 0.0f;
+	}
+	else
+	{
+		deltaAngle = faceAngle - moveAngle;
+
+		if (deltaAngle < 0.0f)
+		{
+			deltaAngle += 360.0f;
+		}
+
+		/*if (deltaAngle == 0.0f)
+		{
+			
+		}*/
+		UE_LOG(LogTemp, Warning, TEXT("%f"), deltaAngle);
+
+		xMoveRelativeToFaceDir = FMath::Sin(deltaAngle * PI / 180.0f) * axisScale;
+		yMoveRelativeToFaceDir = FMath::Cos(deltaAngle * PI / 180.0f) * axisScale;
+	}
+}
+
+void AMainCharacterPlayerController::AddXMovement(float axisValue)
+{
+	xMoveDir = axisValue;
 }
 
 void AMainCharacterPlayerController::AddYMovement(float axisValue)
 {
 	yMoveDir = axisValue;
-
-	if (isAttacking != true)
-	{
-		//AddMovementInput(FVector(1.0f, 0.0f, 0.0f), yMoveDir, false);
-	}
 }
 
 void AMainCharacterPlayerController::AddXRotation(float axisValue)
@@ -210,15 +249,10 @@ void AMainCharacterPlayerController::ActivateDodging()
 	//AddMovementInput(FVector(0.0f, 1.0f, 0.0f), dodgePotency, true);
 
 	float x, y;
-	if (isRotating)
+	if (xMoveDir + yMoveDir == 0.0f)
 	{
-		x = rXAxis;
-		y = rYAxis;
-	}
-	else if (xMoveDir + yMoveDir == 0.0f)
-	{
-		x = FMath::Sin(Controller->GetControlRotation().Yaw * PI / 180.0f);
-		y = FMath::Cos(Controller->GetControlRotation().Yaw * PI / 180.0f);
+		x = xFaceDir; // FMath::Sin(Controller->GetControlRotation().Yaw * PI / 180.0f);
+		y = yFaceDir; // FMath::Cos(Controller->GetControlRotation().Yaw * PI / 180.0f);
 	}
 	else
 	{
