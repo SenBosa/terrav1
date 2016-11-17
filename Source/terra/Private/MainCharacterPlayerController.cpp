@@ -7,8 +7,6 @@
 #include "Kismet/HeadMountedDisplayFunctionLibrary.h"
 //#include "TP_TopDownCharacter.h"
 
-
-
 AMainCharacterPlayerController::AMainCharacterPlayerController()
 {
 	//bShowMouseCursor = true;
@@ -33,7 +31,14 @@ AMainCharacterPlayerController::AMainCharacterPlayerController()
 	rXAxis = 0.0f;
 	rYAxis = 0.0f;
 	turnRate = 5.0f;
-	dodgePotency = 2500.0f;
+	dodgePotency = 1000.0f;
+	dodgeTimer = 0.0f;
+	dodgeBeginDelay = 0.1f;
+	dodgeDuration = 0.333333f;
+	dodgeEndDelay = 0.15f;
+	hasDodged = false;
+	xDodge = 0.0f;
+	yDodge = 0.0f;
 }
 
 void AMainCharacterPlayerController::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -72,8 +77,24 @@ void AMainCharacterPlayerController::Tick(float deltaTime)
 	FVector2D v2 = FVector2D(xMoveDir, yMoveDir);
 	float axisScale = FMath::Clamp(v2.Size(), 0.0f, 1.0f);
 
-	PerformMovement(axisScale);
-	PerformRotation(axisScale);
+	switch (state)
+	{
+	case CharacterState::IDLE:
+	case CharacterState::IDLE_COMBAT:
+		Idle(deltaTime, axisScale);
+		break;
+	case CharacterState::ATTACKING:
+		Attacking(deltaTime, axisScale);
+		break;
+	case CharacterState::BLOCKING:
+		Blocking(deltaTime, axisScale);
+		break;
+	case CharacterState::DODGING:
+		Dodging(deltaTime, axisScale);
+		break;
+	default:
+		break;
+	}
 
 	/*if (isInCombat && isBlocking == false && isDodging == false && isAttacking == false)
 	{
@@ -88,8 +109,75 @@ void AMainCharacterPlayerController::Tick(float deltaTime)
 	isInCombat = true;
 }
 
+void AMainCharacterPlayerController::Idle(float deltaTime, float axisScale)
+{
+	PerformMovement(axisScale);
+	PerformRotation(axisScale);
+}
+
+void AMainCharacterPlayerController::Attacking(float deltaTime, float axisScale)
+{
+
+}
+
+void AMainCharacterPlayerController::Blocking(float deltaTime, float axisScale)
+{
+	PerformMovement(axisScale);
+	PerformRotation(axisScale);
+}
+
+void AMainCharacterPlayerController::Dodging(float deltaTime, float axisScale)
+{
+	if (hasDodged == false)
+	{
+		PerformRotation(axisScale);
+	}
+
+	dodgeTimer += deltaTime;
+
+	if (dodgeTimer >= dodgeBeginDelay)
+	{
+		if (hasDodged == false)
+		{
+			if (xMoveDir + yMoveDir == 0.0f)
+			{
+				xDodge = xFaceDir; // FMath::Sin(Controller->GetControlRotation().Yaw * PI / 180.0f);
+				yDodge = yFaceDir; // FMath::Cos(Controller->GetControlRotation().Yaw * PI / 180.0f);
+			}
+			else
+			{
+				xDodge = xMoveDir;
+				yDodge = yMoveDir;
+			}
+
+			hasDodged = true;
+		}
+
+		if (dodgeTimer >= dodgeBeginDelay + dodgeDuration)
+		{
+			//hasDodged = true;
+			isDodging = false;
+		}
+		else
+		{
+			SetActorLocation(GetActorLocation() + FVector(yDodge, xDodge, 0.0f) * dodgePotency * deltaTime);
+		}
+
+		if (hasDodged == true && dodgeTimer >= dodgeBeginDelay + dodgeDuration + dodgeEndDelay)
+		{
+			//isDodging = false;
+			state = CharacterState::IDLE_COMBAT;
+		}
+	}
+}
+
 void AMainCharacterPlayerController::PerformMovement(float axisScale)
 {
+	if (isBlocking == true)
+	{
+		axisScale *= 0.5f;
+	}
+
 	// Multiply the analog input axis by the scale of our speed
 	speed = axisScale * speedScale;
 
@@ -168,10 +256,15 @@ void AMainCharacterPlayerController::PerformRotation(float axisScale)
 	faceAngle = FMath::Atan2(xFaceDir, yFaceDir) * 180.0f / PI;
 	moveAngle = FMath::Atan2(xMoveDir, yMoveDir) * 180.0f / PI;
 
-	if (axisScale == 0.0f)
+	if (axisScale == 0.0f && isDodging == false)
 	{
 		xMoveRelativeToFaceDir = 0.0f;
 		yMoveRelativeToFaceDir = 0.0f;
+	}
+	else if (axisScale == 0.0f && isDodging == true)
+	{
+		xMoveRelativeToFaceDir = 0.0f;
+		yMoveRelativeToFaceDir = 1.0f;
 	}
 	else
 	{
@@ -186,7 +279,7 @@ void AMainCharacterPlayerController::PerformRotation(float axisScale)
 		{
 			
 		}*/
-		UE_LOG(LogTemp, Warning, TEXT("%f"), deltaAngle);
+		//UE_LOG(LogTemp, Warning, TEXT("%f"), deltaAngle);
 
 		xMoveRelativeToFaceDir = FMath::Sin(deltaAngle * PI / 180.0f) * axisScale;
 		yMoveRelativeToFaceDir = FMath::Cos(deltaAngle * PI / 180.0f) * axisScale;
@@ -232,45 +325,36 @@ void AMainCharacterPlayerController::OnSpell3Use()
 
 void AMainCharacterPlayerController::ActivateBlocking()
 {
-	EnterCombat();
+	EnterCombat(CharacterState::BLOCKING);
 	isBlocking = true;
 }
 
 void AMainCharacterPlayerController::DeactivateBlocking()
 {
 	isBlocking = false;
+	state = CharacterState::IDLE_COMBAT;
 }
 
 void AMainCharacterPlayerController::ActivateDodging()
 {
-	EnterCombat();
-	isDodging = true;
-
-	//AddMovementInput(FVector(0.0f, 1.0f, 0.0f), dodgePotency, true);
-
-	float x, y;
-	if (xMoveDir + yMoveDir == 0.0f)
+	if (state != CharacterState::DODGING)
 	{
-		x = xFaceDir; // FMath::Sin(Controller->GetControlRotation().Yaw * PI / 180.0f);
-		y = yFaceDir; // FMath::Cos(Controller->GetControlRotation().Yaw * PI / 180.0f);
+		isDodging = true;
+		hasDodged = false;
+		dodgeTimer = 0.0f;
+		EnterCombat(CharacterState::DODGING);
 	}
-	else
-	{
-		x = xMoveDir;
-		y = yMoveDir;
-	}
-
-	LaunchCharacter(FVector(y * dodgePotency, x * dodgePotency, 0.0f), true, false);
 }
 
 void AMainCharacterPlayerController::DeactivateDodging()
 {
-	isDodging = false;
+	//isDodging = false;
+	//state = CharacterState::IDLE_COMBAT;
 }
 
 void AMainCharacterPlayerController::ActivateLightAttack()
 {
-	EnterCombat();
+	EnterCombat(CharacterState::ATTACKING);
 	attackIndex = 0;
 	isAttacking = true;
 }
@@ -278,11 +362,12 @@ void AMainCharacterPlayerController::ActivateLightAttack()
 void AMainCharacterPlayerController::DeactivateLightAttack()
 {
 	isAttacking = false;
+	state = CharacterState::IDLE_COMBAT;
 }
 
 void AMainCharacterPlayerController::ActivateHeavyAttack()
 {
-	EnterCombat();
+	EnterCombat(CharacterState::ATTACKING);
 	attackIndex = 1;
 	isAttacking = true;
 }
@@ -290,10 +375,12 @@ void AMainCharacterPlayerController::ActivateHeavyAttack()
 void AMainCharacterPlayerController::DeactivateHeavyAttack()
 {
 	isAttacking = false;
+	state = CharacterState::IDLE_COMBAT;
 }
 
-void AMainCharacterPlayerController::EnterCombat()
+void AMainCharacterPlayerController::EnterCombat(CharacterState newState)
 {
 	isInCombat = true;
 	inCombatTimer = inCombatDuration;
+	state = newState;
 }
