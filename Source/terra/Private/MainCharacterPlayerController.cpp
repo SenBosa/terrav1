@@ -354,15 +354,26 @@ void AMainCharacterPlayerController::DeactivateDodging()
 
 void AMainCharacterPlayerController::ActivateLightAttack()
 {
-	EnterCombat(CharacterState::ATTACKING);
-	attackIndex = 0;
-	isAttacking = true;
+	if (attackIndex < 2)
+	{
+		EnterCombat(CharacterState::ATTACKING);
+		//attackIndex = 0;
+		if (isAttacking)
+		{
+			attackIndex++;
+		}
+		else
+		{
+			isAttacking = true;
+			attackIndex = 0;
+		}
+	}
 }
 
 void AMainCharacterPlayerController::DeactivateLightAttack()
 {
-	isAttacking = false;
-	state = CharacterState::IDLE_COMBAT;
+	/*isAttacking = false;
+	state = CharacterState::IDLE_COMBAT;*/
 }
 
 void AMainCharacterPlayerController::ActivateHeavyAttack()

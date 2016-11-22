@@ -66,6 +66,8 @@ public:
 	bool isAttacking;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	int attackIndex;
+	float attackTimer;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	bool isBlocking;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
