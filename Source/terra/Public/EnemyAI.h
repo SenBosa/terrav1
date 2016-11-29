@@ -1,0 +1,73 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "GameFramework/Character.h"
+#include "EnemyAI.generated.h"
+
+UENUM(BlueprintType)
+enum class EnemyState : uint8
+{
+	IDLE,
+	IDLE_COMBAT,
+	CHASING,
+	ATTACKING,
+};
+
+UCLASS()
+class TERRA_API AEnemyAI : public ACharacter
+{
+	GENERATED_BODY()
+
+public:
+	// Sets default values for this character's properties
+	AEnemyAI();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Enum)
+	EnemyState state;
+
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+	
+	// Speed variables
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	float speed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	float speedScale;
+
+	// Move and face values (analog input)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	float xMoveDir;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	float yMoveDir;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	float xFaceDir;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	float yFaceDir;
+
+	// Combat variables
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	bool isAttacking;
+
+	APawn* playerCharacter;
+
+
+
+
+
+
+
+	void Idle(float deltaTime);
+	void Attacking(float deltaTime);
+	void PerformMovement();
+	void CheckMovement();
+	void AddPlayer(APawn* player);
+
+protected:
+
+	// Called every frame
+	virtual void Tick( float DeltaSeconds ) override;
+
+	//// Called to bind functionality to input
+	//virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+};
