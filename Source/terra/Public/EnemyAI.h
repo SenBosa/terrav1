@@ -30,24 +30,28 @@ public:
 	virtual void BeginPlay() override;
 	
 	// Speed variables
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
 	float speed;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnemyData)
 	float speedScale;
 
 	// Move and face values (analog input)
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
 	float xMoveDir;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
 	float yMoveDir;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
 	float xFaceDir;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
 	float yFaceDir;
 
 	// Combat variables
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
 	bool isAttacking;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
+	float chaseRange;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
+	float attackRange;
 
 	APawn* playerCharacter;
 

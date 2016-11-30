@@ -24,6 +24,8 @@ void AEnemyAI::BeginPlay()
 	xFaceDir = 0.0f;
 	yFaceDir = 0.0f;
 	isAttacking = false;
+	chaseRange = 20.0f;
+	attackRange = 5.0f;
 
 	playerCharacter = NULL;
 }
@@ -33,11 +35,16 @@ void AEnemyAI::Tick(float deltaTime)
 {
 	Super::Tick(deltaTime);
 
+	CheckMovement();
+
 	switch (state)
 	{
 	case EnemyState::IDLE:
 	case EnemyState::IDLE_COMBAT:
 		Idle(deltaTime);
+		break;
+	case EnemyState::CHASING:
+		PerformMovement();
 		break;
 	case EnemyState::ATTACKING:
 		Attacking(deltaTime);
@@ -58,21 +65,54 @@ void AEnemyAI::Idle(float deltaTime)
 {
 	/*PerformMovement(axisScale);
 	PerformRotation(axisScale);*/
+
+	FVector playerLocation = playerCharacter->GetActorLocation();
+	FVector myLocation = GetActorLocation();
+	FVector distanceVector = playerLocation - myLocation;
+	float distance = distanceVector.Size();
+
+	if (distance <= chaseRange)
+	{
+		state = EnemyState::CHASING;
+	}
 }
 
 void AEnemyAI::Attacking(float deltaTime)
 {
+	FVector playerLocation = playerCharacter->GetActorLocation();
+	FVector myLocation = GetActorLocation();
+	FVector distanceVector = playerLocation - myLocation;
+	float distance = distanceVector.Size();
 
+	if (distance > attackRange)
+	{
+		state = EnemyState::CHASING;
+	}
 }
 
 void AEnemyAI::PerformMovement()
 {
+	FVector playerLocation = playerCharacter->GetActorLocation();
+	FVector myLocation = GetActorLocation();
+	FVector distanceVector = playerLocation - myLocation;
+	float distance = distanceVector.Size();
+
 	// Multiply the analog input axis by the scale of our speed
 	speed = speedScale;
 
 	if (isAttacking != true)
 	{
 		AddMovementInput(FVector(yMoveDir, xMoveDir, 0.0f), 1.0f, false);
+
+		if (distance <= attackRange)
+		{
+			state = EnemyState::ATTACKING;
+		}
+	}
+
+	if (distance > chaseRange)
+	{
+		state = EnemyState::IDLE;
 	}
 }
 
@@ -82,6 +122,10 @@ void AEnemyAI::CheckMovement()
 	FVector myLocation = GetActorLocation();
 
 	FVector direction = playerLocation - myLocation;
+
+	direction.Normalize();
+	xMoveDir = direction.X;
+	yMoveDir = direction.Y;
 }
 
 void AEnemyAI::AddPlayer(APawn* player)
