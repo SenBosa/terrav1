@@ -241,7 +241,7 @@ void AMainCharacterPlayerController::PerformRotation(float axisScale)
 		////UE_LOG(LogTemp, Warning, TEXT());
 		//UE_LOG(LogTemp, Warning, TEXT("%f"), deltaTurn);
 
-		yaw = FMath::FixedTurn(Controller->GetControlRotation().Yaw, targetAngle, axisScale * turnRate);
+		yaw = FMath::FixedTurn(rotator.Yaw, targetAngle, axisScale * turnRate);
 		rotator.Yaw = yaw;
 
 		Controller->SetControlRotation(rotator);

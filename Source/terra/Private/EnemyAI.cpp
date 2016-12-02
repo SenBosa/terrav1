@@ -19,13 +19,14 @@ void AEnemyAI::BeginPlay()
 	
 	speed = 0.0f;
 	speedScale = 400.0f;
+	turnRate = 5.0f;
 	xMoveDir = 0.0f;
 	yMoveDir = 0.0f;
 	xFaceDir = 0.0f;
 	yFaceDir = 0.0f;
 	isAttacking = false;
-	chaseRange = 20.0f;
-	attackRange = 5.0f;
+	chaseRange = 1000.0f;
+	attackRange = 350.0f;
 
 	playerCharacter = NULL;
 }
@@ -34,23 +35,30 @@ void AEnemyAI::BeginPlay()
 void AEnemyAI::Tick(float deltaTime)
 {
 	Super::Tick(deltaTime);
+	//UE_LOG(LogTemp, Warning, TEXT("happens1"));
 
-	CheckMovement();
-
-	switch (state)
+	if (playerCharacter != NULL)
 	{
-	case EnemyState::IDLE:
-	case EnemyState::IDLE_COMBAT:
-		Idle(deltaTime);
-		break;
-	case EnemyState::CHASING:
-		PerformMovement();
-		break;
-	case EnemyState::ATTACKING:
-		Attacking(deltaTime);
-		break;
-	default:
-		break;
+		//UE_LOG(LogTemp, Warning, TEXT("happens2"));
+		CheckMovement();
+
+		switch (state)
+		{
+		case EnemyState::IDLE:
+		case EnemyState::IDLE_COMBAT:
+			Idle(deltaTime);
+			break;
+		case EnemyState::CHASING:
+			PerformMovement();
+			PerformRotation();
+			break;
+		case EnemyState::ATTACKING:
+			PerformRotation();
+			Attacking(deltaTime);
+			break;
+		default:
+			break;
+		}
 	}
 }
 
@@ -71,6 +79,8 @@ void AEnemyAI::Idle(float deltaTime)
 	FVector distanceVector = playerLocation - myLocation;
 	float distance = distanceVector.Size();
 
+	UE_LOG(LogTemp, Warning, TEXT("%f"), distance);
+
 	if (distance <= chaseRange)
 	{
 		state = EnemyState::CHASING;
@@ -84,10 +94,25 @@ void AEnemyAI::Attacking(float deltaTime)
 	FVector distanceVector = playerLocation - myLocation;
 	float distance = distanceVector.Size();
 
+	isAttacking = true;
+
 	if (distance > attackRange)
 	{
+		isAttacking = false;
 		state = EnemyState::CHASING;
 	}
+}
+
+void AEnemyAI::CheckMovement()
+{
+	FVector playerLocation = playerCharacter->GetActorLocation();
+	FVector myLocation = GetActorLocation();
+
+	FVector direction = playerLocation - myLocation;
+
+	direction.Normalize();
+	xMoveDir = direction.Y;
+	yMoveDir = direction.X;
 }
 
 void AEnemyAI::PerformMovement()
@@ -97,7 +122,6 @@ void AEnemyAI::PerformMovement()
 	FVector distanceVector = playerLocation - myLocation;
 	float distance = distanceVector.Size();
 
-	// Multiply the analog input axis by the scale of our speed
 	speed = speedScale;
 
 	if (isAttacking != true)
@@ -116,16 +140,15 @@ void AEnemyAI::PerformMovement()
 	}
 }
 
-void AEnemyAI::CheckMovement()
+void AEnemyAI::PerformRotation()
 {
-	FVector playerLocation = playerCharacter->GetActorLocation();
-	FVector myLocation = GetActorLocation();
+	FRotator rotator = GetActorRotation();
+	float yaw;
+	float targetAngle = FMath::Atan2(xMoveDir, yMoveDir) * 180.0f / PI;
 
-	FVector direction = playerLocation - myLocation;
-
-	direction.Normalize();
-	xMoveDir = direction.X;
-	yMoveDir = direction.Y;
+	yaw = FMath::FixedTurn(rotator.Yaw, targetAngle, turnRate);
+	rotator.Yaw = yaw;
+	SetActorRotation(rotator);
 }
 
 void AEnemyAI::AddPlayer(APawn* player)

@@ -34,6 +34,8 @@ public:
 	float speed;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnemyData)
 	float speedScale;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnemyData)
+	float turnRate;
 
 	// Move and face values (analog input)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
@@ -53,18 +55,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
 	float attackRange;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnemyData)
 	APawn* playerCharacter;
-
-
-
-
-
-
 
 	void Idle(float deltaTime);
 	void Attacking(float deltaTime);
-	void PerformMovement();
 	void CheckMovement();
+	void PerformMovement();
+	void PerformRotation();
 	void AddPlayer(APawn* player);
 
 protected:
