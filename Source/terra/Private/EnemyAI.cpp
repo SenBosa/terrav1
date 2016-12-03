@@ -27,6 +27,10 @@ void AEnemyAI::BeginPlay()
 	isAttacking = false;
 	chaseRange = 1000.0f;
 	attackRange = 350.0f;
+	attackTimer = 0.0f;
+	attackDuration = 2.333f;
+	attackWindUpDuration = 1.333f;
+	alternateAttack = false;
 
 	playerCharacter = NULL;
 }
@@ -53,7 +57,6 @@ void AEnemyAI::Tick(float deltaTime)
 			PerformRotation();
 			break;
 		case EnemyState::ATTACKING:
-			PerformRotation();
 			Attacking(deltaTime);
 			break;
 		default:
@@ -89,14 +92,22 @@ void AEnemyAI::Idle(float deltaTime)
 
 void AEnemyAI::Attacking(float deltaTime)
 {
+	attackTimer += deltaTime;
+
 	FVector playerLocation = playerCharacter->GetActorLocation();
 	FVector myLocation = GetActorLocation();
 	FVector distanceVector = playerLocation - myLocation;
 	float distance = distanceVector.Size();
 
+	if (attackTimer <= attackWindUpDuration)
+	{
+		PerformRotation();
+	}
+
 	isAttacking = true;
 
-	if (distance > attackRange)
+	//if (distance > attackRange)
+	if(attackTimer > attackDuration)
 	{
 		isAttacking = false;
 		state = EnemyState::CHASING;
@@ -131,6 +142,8 @@ void AEnemyAI::PerformMovement()
 		if (distance <= attackRange)
 		{
 			state = EnemyState::ATTACKING;
+			attackTimer = 0.0f;
+			alternateAttack = !alternateAttack;
 		}
 	}
 

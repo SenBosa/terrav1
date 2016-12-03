@@ -30,7 +30,7 @@ AMainCharacterPlayerController::AMainCharacterPlayerController()
 	isRotating = false;
 	rXAxis = 0.0f;
 	rYAxis = 0.0f;
-	turnRate = 5.0f;
+	turnRate = 10.0f;
 	dodgePotency = 1000.0f;
 	dodgeTimer = 0.0f;
 	dodgeBeginDelay = 0.1f;

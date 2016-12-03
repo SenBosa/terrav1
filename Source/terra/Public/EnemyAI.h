@@ -54,6 +54,14 @@ public:
 	float chaseRange;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
 	float attackRange;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
+	float attackTimer;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
+	float attackDuration;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
+	float attackWindUpDuration;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
+	bool alternateAttack;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnemyData)
 	APawn* playerCharacter;
