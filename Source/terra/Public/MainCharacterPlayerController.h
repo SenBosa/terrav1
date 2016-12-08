@@ -26,6 +26,8 @@ class TERRA_API AMainCharacterPlayerController : public ACharacter
 public:
 	AMainCharacterPlayerController();
 
+	static AMainCharacterPlayerController* instance;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Enum)
 	CharacterState state;
 
@@ -62,11 +64,26 @@ public:
 	float inCombatDuration;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	float inCombatTimer;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
 	bool isAttacking;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
 	int attackIndex;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
 	float attackTimer;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
+	float attack1Duration;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
+	float attack1SwingDuration;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
+	float attack2Duration;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
+	float attack2SwingDuration;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
+	float attack3Duration;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
+	bool promptAttack2;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
+	bool promptAttack3;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = PlayerData)
 	bool isBlocking;
@@ -112,4 +129,5 @@ protected:
 	void ActivateHeavyAttack();
 	void DeactivateHeavyAttack();
 	void EnterCombat(CharacterState newState);
+	void StopAttacking();
 };

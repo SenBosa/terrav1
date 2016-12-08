@@ -24,7 +24,17 @@ AMainCharacterPlayerController::AMainCharacterPlayerController()
 	isAttacking = false;
 	isBlocking = false;
 	isDodging = false;
+
 	attackIndex = 0;
+	attackTimer = 0.0f;
+	attack1Duration = 1.1113f;//1.667f;
+	attack1SwingDuration = 0.667f;
+	attack2Duration = 0.667f;
+	attack2SwingDuration = 0.6f;
+	attack3Duration = 1.0f;
+	promptAttack2 = false;
+	promptAttack3 = false;
+
 	inCombatDuration = 5.0f;
 	inCombatTimer = 0.0f;
 	isRotating = false;
@@ -39,6 +49,8 @@ AMainCharacterPlayerController::AMainCharacterPlayerController()
 	hasDodged = false;
 	xDodge = 0.0f;
 	yDodge = 0.0f;
+
+	//AMainCharacterPlayerController::instance = this;
 }
 
 void AMainCharacterPlayerController::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -96,7 +108,7 @@ void AMainCharacterPlayerController::Tick(float deltaTime)
 		break;
 	}
 
-	/*if (isInCombat && isBlocking == false && isDodging == false && isAttacking == false)
+	if (isInCombat && isBlocking == false && isDodging == false && isAttacking == false)
 	{
 		inCombatTimer -= deltaTime;
 
@@ -104,9 +116,9 @@ void AMainCharacterPlayerController::Tick(float deltaTime)
 		{
 			isInCombat = false;
 		}
-	}*/
+	}
 
-	isInCombat = true;
+	//isInCombat = true;
 }
 
 void AMainCharacterPlayerController::Idle(float deltaTime, float axisScale)
@@ -117,7 +129,51 @@ void AMainCharacterPlayerController::Idle(float deltaTime, float axisScale)
 
 void AMainCharacterPlayerController::Attacking(float deltaTime, float axisScale)
 {
+	attackTimer += deltaTime;
 
+	switch (attackIndex)
+	{
+	case 0:
+		if (promptAttack2)
+		{
+			if (attackTimer >= attack1SwingDuration)
+			{
+				attackIndex = 1;
+				attackTimer = 0.0f;
+			}
+		}
+		else
+		{
+			if (attackTimer >= attack1Duration)
+			{
+				StopAttacking();
+			}
+		}
+		break;
+	case 1:
+		if (promptAttack3)
+		{
+			if (attackTimer >= attack2SwingDuration)
+			{
+				attackIndex = 2;
+				attackTimer = 0.0f;
+			}
+		}
+		else
+		{
+			if (attackTimer >= attack2Duration)
+			{
+				StopAttacking();
+			}
+		}
+		break;
+	case 2:
+		if (attackTimer >= attack3Duration)
+		{
+			StopAttacking();
+		}
+		break;
+	}
 }
 
 void AMainCharacterPlayerController::Blocking(float deltaTime, float axisScale)
@@ -128,45 +184,48 @@ void AMainCharacterPlayerController::Blocking(float deltaTime, float axisScale)
 
 void AMainCharacterPlayerController::Dodging(float deltaTime, float axisScale)
 {
-	if (hasDodged == false)
-	{
-		PerformRotation(axisScale);
-	}
-
-	dodgeTimer += deltaTime;
-
-	if (dodgeTimer >= dodgeBeginDelay)
+	if (isAttacking == false)
 	{
 		if (hasDodged == false)
 		{
-			if (xMoveDir + yMoveDir == 0.0f)
+			PerformRotation(axisScale);
+		}
+
+		dodgeTimer += deltaTime;
+
+		if (dodgeTimer >= dodgeBeginDelay)
+		{
+			if (hasDodged == false)
 			{
-				xDodge = xFaceDir; // FMath::Sin(Controller->GetControlRotation().Yaw * PI / 180.0f);
-				yDodge = yFaceDir; // FMath::Cos(Controller->GetControlRotation().Yaw * PI / 180.0f);
+				if (xMoveDir + yMoveDir == 0.0f)
+				{
+					xDodge = xFaceDir; // FMath::Sin(Controller->GetControlRotation().Yaw * PI / 180.0f);
+					yDodge = yFaceDir; // FMath::Cos(Controller->GetControlRotation().Yaw * PI / 180.0f);
+				}
+				else
+				{
+					xDodge = xMoveDir;
+					yDodge = yMoveDir;
+				}
+
+				hasDodged = true;
+			}
+
+			if (dodgeTimer >= dodgeBeginDelay + dodgeDuration)
+			{
+				//hasDodged = true;
+				isDodging = false;
 			}
 			else
 			{
-				xDodge = xMoveDir;
-				yDodge = yMoveDir;
+				SetActorLocation(GetActorLocation() + FVector(yDodge, xDodge, 0.0f) * dodgePotency * deltaTime);
 			}
 
-			hasDodged = true;
-		}
-
-		if (dodgeTimer >= dodgeBeginDelay + dodgeDuration)
-		{
-			//hasDodged = true;
-			isDodging = false;
-		}
-		else
-		{
-			SetActorLocation(GetActorLocation() + FVector(yDodge, xDodge, 0.0f) * dodgePotency * deltaTime);
-		}
-
-		if (hasDodged == true && dodgeTimer >= dodgeBeginDelay + dodgeDuration + dodgeEndDelay)
-		{
-			//isDodging = false;
-			state = CharacterState::IDLE_COMBAT;
+			if (hasDodged == true && dodgeTimer >= dodgeBeginDelay + dodgeDuration + dodgeEndDelay)
+			{
+				//isDodging = false;
+				state = CharacterState::IDLE_COMBAT;
+			}
 		}
 	}
 }
@@ -337,12 +396,15 @@ void AMainCharacterPlayerController::DeactivateBlocking()
 
 void AMainCharacterPlayerController::ActivateDodging()
 {
-	if (state != CharacterState::DODGING)
+	if (state == CharacterState::IDLE || state == CharacterState::IDLE_COMBAT)
 	{
-		isDodging = true;
-		hasDodged = false;
-		dodgeTimer = 0.0f;
-		EnterCombat(CharacterState::DODGING);
+		if (state != CharacterState::DODGING)
+		{
+			isDodging = true;
+			hasDodged = false;
+			dodgeTimer = 0.0f;
+			EnterCombat(CharacterState::DODGING);
+		}
 	}
 }
 
@@ -354,18 +416,33 @@ void AMainCharacterPlayerController::DeactivateDodging()
 
 void AMainCharacterPlayerController::ActivateLightAttack()
 {
-	if (attackIndex < 2)
+	if (state != CharacterState::DODGING && state != CharacterState::BLOCKING)
 	{
-		EnterCombat(CharacterState::ATTACKING);
-		//attackIndex = 0;
-		if (isAttacking)
+		if (isAttacking == false)
 		{
-			attackIndex++;
-		}
-		else
-		{
+			EnterCombat(CharacterState::ATTACKING);
 			isAttacking = true;
 			attackIndex = 0;
+			attackTimer = 0.0f;
+		}
+		else if (promptAttack2 == false || promptAttack3 == false)
+		{
+			EnterCombat(CharacterState::ATTACKING);
+			if (attackIndex == 0)
+			{
+				if (promptAttack2 == false)
+				{
+					promptAttack2 = true;
+				}
+				else
+				{
+					promptAttack3 = true;
+				}
+			}
+			if (attackIndex == 1)
+			{
+				promptAttack3 = true;
+			}
 		}
 	}
 }
@@ -378,15 +455,15 @@ void AMainCharacterPlayerController::DeactivateLightAttack()
 
 void AMainCharacterPlayerController::ActivateHeavyAttack()
 {
-	EnterCombat(CharacterState::ATTACKING);
+	/*EnterCombat(CharacterState::ATTACKING);
 	attackIndex = 1;
-	isAttacking = true;
+	isAttacking = true;*/
 }
 
 void AMainCharacterPlayerController::DeactivateHeavyAttack()
 {
-	isAttacking = false;
-	state = CharacterState::IDLE_COMBAT;
+	/*isAttacking = false;
+	state = CharacterState::IDLE_COMBAT;*/
 }
 
 void AMainCharacterPlayerController::EnterCombat(CharacterState newState)
@@ -394,4 +471,13 @@ void AMainCharacterPlayerController::EnterCombat(CharacterState newState)
 	isInCombat = true;
 	inCombatTimer = inCombatDuration;
 	state = newState;
+}
+
+void AMainCharacterPlayerController::StopAttacking()
+{
+	isAttacking = false;
+	attackIndex = 0.0f;
+	promptAttack2 = false;
+	promptAttack3 = false;
+	state = CharacterState::IDLE_COMBAT;
 }
