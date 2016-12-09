@@ -64,7 +64,12 @@ public:
 	bool alternateAttack;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnemyData)
+	UCapsuleComponent* weaponCapsule;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnemyData)
 	APawn* playerCharacter;
+
+	bool addedCapsule;
 
 	void Idle(float deltaTime);
 	void Attacking(float deltaTime);
@@ -72,6 +77,10 @@ public:
 	void PerformMovement();
 	void PerformRotation();
 	void AddPlayer(APawn* player);
+
+	UFUNCTION()
+	void OnWeaponHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	//void OnWeaponHit(const FOverlapInfo& OtherOverlap, bool bDoNotifies);
 
 protected:
 

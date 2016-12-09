@@ -31,8 +31,11 @@ void AEnemyAI::BeginPlay()
 	attackDuration = 2.333f;
 	attackWindUpDuration = 1.333f;
 	alternateAttack = false;
+	addedCapsule = false;
+	//weaponCapsule = NULL;
 
-	playerCharacter = NULL;
+	//weaponCapsule = GetComponentByClass(ty (UCapsuleComponent));
+	//playerCharacter = NULL;
 }
 
 // Called every frame
@@ -40,6 +43,19 @@ void AEnemyAI::Tick(float deltaTime)
 {
 	Super::Tick(deltaTime);
 	//UE_LOG(LogTemp, Warning, TEXT("happens1"));
+
+	//UE_LOG(LogTemp, Warning, TEXT("%s"), *weaponCapsule->GetName());
+	
+	if (addedCapsule == false)
+	{
+		if (weaponCapsule != NULL)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s"), *weaponCapsule->GetName());
+			weaponCapsule->OnComponentBeginOverlap.AddDynamic(this, &AEnemyAI::OnWeaponHit);
+			//weaponCapsule->BeginComponentOverlap.AddDynamic(this, &AEnemyAI::OnWeaponHit);
+			addedCapsule = true;
+		}
+	}
 
 	if (playerCharacter != NULL)
 	{
@@ -82,7 +98,7 @@ void AEnemyAI::Idle(float deltaTime)
 	FVector distanceVector = playerLocation - myLocation;
 	float distance = distanceVector.Size();
 
-	UE_LOG(LogTemp, Warning, TEXT("%f"), distance);
+	//UE_LOG(LogTemp, Warning, TEXT("%f"), distance);
 
 	if (distance <= chaseRange)
 	{
@@ -167,4 +183,16 @@ void AEnemyAI::PerformRotation()
 void AEnemyAI::AddPlayer(APawn* player)
 {
 	playerCharacter = player;
+}
+
+void AEnemyAI::OnWeaponHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+//void AEnemyAI::OnWeaponHit(const FOverlapInfo& OtherOverlap, bool bDoNotifies)
+{
+	//UE_LOG(LogTemp, Warning, TEXT("happens1"));
+
+	
+	if (OtherActor == (AActor*)playerCharacter)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *OtherActor->GetName());
+	}
 }
