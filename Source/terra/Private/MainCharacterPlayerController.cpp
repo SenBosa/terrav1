@@ -2,6 +2,7 @@
 
 #include "terra.h"
 #include "MainCharacterPlayerController.h"
+#include "EnemyAI.h"
 #include "AI/Navigation/NavigationSystem.h"
 #include "Runtime/Engine/Classes/Components/DecalComponent.h"
 #include "Kismet/HeadMountedDisplayFunctionLibrary.h"
@@ -28,10 +29,14 @@ AMainCharacterPlayerController::AMainCharacterPlayerController()
 	attackIndex = 0;
 	attackTimer = 0.0f;
 	attack1Duration = 1.1113f;//1.667f;
+	attack1WindUpDuration = 0.44467f;
 	attack1SwingDuration = 0.667f;
 	attack2Duration = 0.667f;
+	attack2WindUpDuration = 0.333f;
 	attack2SwingDuration = 0.6f;
 	attack3Duration = 1.0f;
+	attack3WindUpDuration = 0.167f;
+	attack3SwingDuration = 0.5f;
 	promptAttack2 = false;
 	promptAttack3 = false;
 
@@ -50,7 +55,10 @@ AMainCharacterPlayerController::AMainCharacterPlayerController()
 	xDodge = 0.0f;
 	yDodge = 0.0f;
 
+	health = 3;
+	staggerPotency = 1000.0f;
 	//AMainCharacterPlayerController::instance = this;
+	addedCapsule = false;
 }
 
 void AMainCharacterPlayerController::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -72,6 +80,7 @@ void AMainCharacterPlayerController::SetupPlayerInputComponent(class UInputCompo
 	PlayerInputComponent->BindAction("Spell2", IE_Pressed, this, &AMainCharacterPlayerController::OnSpell2Use);
 	PlayerInputComponent->BindAction("Spell3", IE_Pressed, this, &AMainCharacterPlayerController::OnSpell3Use);
 	PlayerInputComponent->BindAction("Block", IE_Pressed, this, &AMainCharacterPlayerController::ActivateBlocking);
+	//PlayerInputComponent->BindAction("Block", IE, this, &AMainCharacterPlayerController::ActivateBlocking);
 	PlayerInputComponent->BindAction("Block", IE_Released, this, &AMainCharacterPlayerController::DeactivateBlocking);
 	PlayerInputComponent->BindAction("Dodge", IE_Pressed, this, &AMainCharacterPlayerController::ActivateDodging);
 	PlayerInputComponent->BindAction("Dodge", IE_Released, this, &AMainCharacterPlayerController::DeactivateDodging);
@@ -84,6 +93,17 @@ void AMainCharacterPlayerController::SetupPlayerInputComponent(class UInputCompo
 void AMainCharacterPlayerController::Tick(float deltaTime)
 {
 	Super::Tick(deltaTime);
+
+	if (addedCapsule == false)
+	{
+		if (weaponCapsule != NULL)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s"), *weaponCapsule->GetName());
+			weaponCapsule->OnComponentBeginOverlap.AddDynamic(this, &AMainCharacterPlayerController::OnWeaponHit);
+			//weaponCapsule->BeginComponentOverlap.AddDynamic(this, &AMainCharacterPlayerController::OnWeaponHit);
+			addedCapsule = true;
+		}
+	}
 
 	//  Get the scale of analog input
 	FVector2D v2 = FVector2D(xMoveDir, yMoveDir);
@@ -384,14 +404,20 @@ void AMainCharacterPlayerController::OnSpell3Use()
 
 void AMainCharacterPlayerController::ActivateBlocking()
 {
-	EnterCombat(CharacterState::BLOCKING);
-	isBlocking = true;
+	if (state == CharacterState::IDLE || state == CharacterState::IDLE_COMBAT)
+	{
+		EnterCombat(CharacterState::BLOCKING);
+		isBlocking = true;
+	}
 }
 
 void AMainCharacterPlayerController::DeactivateBlocking()
 {
-	isBlocking = false;
-	state = CharacterState::IDLE_COMBAT;
+	if (state == CharacterState::BLOCKING)
+	{
+		isBlocking = false;
+		state = CharacterState::IDLE_COMBAT;
+	}
 }
 
 void AMainCharacterPlayerController::ActivateDodging()
@@ -480,4 +506,65 @@ void AMainCharacterPlayerController::StopAttacking()
 	promptAttack2 = false;
 	promptAttack3 = false;
 	state = CharacterState::IDLE_COMBAT;
+}
+
+void AMainCharacterPlayerController::OnDamageTaken(FVector enemyPosition)
+{
+	if (isDodging == false)
+	{
+		FVector v = GetActorLocation() - enemyPosition;
+		v.Normalize();
+		v *= staggerPotency;
+
+		if (isBlocking)
+		{
+			v /= 5.0f;
+		}
+		else
+		{
+			health--;
+		}
+
+
+		LaunchCharacter(v, true, false);
+	}
+}
+
+void AMainCharacterPlayerController::OnWeaponHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if ((OtherActor != NULL) && (OtherActor != this) && (OtherComp != NULL))
+	{
+		if (OtherActor->GetClass()->IsChildOf(AEnemyAI::StaticClass()))
+		{
+			AEnemyAI* ai = (AEnemyAI*)OtherActor;
+			if (ai != NULL)
+			{
+				//UE_LOG(LogTemp, Warning, TEXT("%s"), ai->GetName());
+				//UE_LOG(LogTemp, Warning, TEXT("triggered"));
+
+
+				switch (attackIndex)
+				{
+				case 0:
+					if (isAttacking && attackTimer >= attack1WindUpDuration && attackTimer <= attack1SwingDuration)
+					{
+						ai->TakeDamageAndStagger(GetActorLocation(), staggerPotency / 5.0f);
+					}
+					break;
+				case 1:
+					if (isAttacking && attackTimer >= attack2WindUpDuration && attackTimer <= attack2SwingDuration)
+					{
+						ai->TakeDamageAndStagger(GetActorLocation(), staggerPotency / 5.0f);
+					}
+					break;
+				case 2:
+					if (isAttacking && attackTimer >= attack3WindUpDuration && attackTimer <= attack3SwingDuration)
+					{
+						ai->TakeDamageAndStagger(GetActorLocation(), staggerPotency);
+					}
+					break;
+				}
+			}
+		}
+	}
 }

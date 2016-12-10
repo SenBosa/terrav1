@@ -30,7 +30,11 @@ void AEnemyAI::BeginPlay()
 	attackTimer = 0.0f;
 	attackDuration = 2.333f;
 	attackWindUpDuration = 1.333f;
+	attackSwingDuration = 1.667f - attackWindUpDuration;
 	alternateAttack = false;
+	health = 3;
+	staggerTimer = 0.0f;
+	forceStaggerDuration = 1.0f;
 	addedCapsule = false;
 	//weaponCapsule = NULL;
 
@@ -100,7 +104,12 @@ void AEnemyAI::Idle(float deltaTime)
 
 	//UE_LOG(LogTemp, Warning, TEXT("%f"), distance);
 
-	if (distance <= chaseRange)
+	if (staggerTimer < forceStaggerDuration)
+	{
+		staggerTimer += deltaTime;
+		speed = 0.0f;
+	}
+	else if (distance <= chaseRange)
 	{
 		state = EnemyState::CHASING;
 	}
@@ -182,7 +191,7 @@ void AEnemyAI::PerformRotation()
 
 void AEnemyAI::AddPlayer(APawn* player)
 {
-	playerCharacter = player;
+	playerCharacter = (AMainCharacterPlayerController*)player;
 }
 
 void AEnemyAI::OnWeaponHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -190,9 +199,28 @@ void AEnemyAI::OnWeaponHit(UPrimitiveComponent* OverlappedComp, AActor* OtherAct
 {
 	//UE_LOG(LogTemp, Warning, TEXT("happens1"));
 
-	
-	if (OtherActor == (AActor*)playerCharacter)
+	if (isAttacking && attackTimer >= attackWindUpDuration && attackTimer <= attackWindUpDuration + attackSwingDuration)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *OtherActor->GetName());
+
+		if (OtherActor == (AActor*)playerCharacter)
+		{
+			//UE_LOG(LogTemp, Warning, TEXT("%s"), *OtherActor->GetName());
+			playerCharacter->OnDamageTaken(GetActorLocation());
+		}
 	}
+}
+
+void AEnemyAI::TakeDamageAndStagger(FVector damagePosition, float staggerPotency)
+{
+	health--;
+	//UE_LOG(LogTemp, Warning, TEXT("%s"), *GetName());
+	isAttacking = false;
+	state = EnemyState::IDLE_COMBAT;
+	staggerTimer = 0.0f;
+
+	FVector v = GetActorLocation() - damagePosition;
+	v.Normalize();
+	v *= staggerPotency;
+
+	LaunchCharacter(v, true, false);
 }

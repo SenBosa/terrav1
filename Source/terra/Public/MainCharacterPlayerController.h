@@ -73,13 +73,21 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
 	float attack1Duration;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
+	float attack1WindUpDuration;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
 	float attack1SwingDuration;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
 	float attack2Duration;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
+	float attack2WindUpDuration;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
 	float attack2SwingDuration;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
 	float attack3Duration;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
+	float attack3WindUpDuration;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
+	float attack3SwingDuration;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
 	bool promptAttack2;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = AttackData)
@@ -99,6 +107,16 @@ public:
 	float xDodge;
 	float yDodge;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	int health;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerData)
+	float staggerPotency;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnemyData)
+	UCapsuleComponent* weaponCapsule;
+	bool addedCapsule;
+
+	void OnDamageTaken(FVector enemyPosition);
 protected:
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -130,4 +148,7 @@ protected:
 	void DeactivateHeavyAttack();
 	void EnterCombat(CharacterState newState);
 	void StopAttacking();
+
+	UFUNCTION()
+	void OnWeaponHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 };

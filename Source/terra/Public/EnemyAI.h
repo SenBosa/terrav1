@@ -3,6 +3,7 @@
 #pragma once
 
 #include "GameFramework/Character.h"
+#include "MainCharacterPlayerController.h"
 #include "EnemyAI.generated.h"
 
 UENUM(BlueprintType)
@@ -61,13 +62,21 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
 	float attackWindUpDuration;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
+	float attackSwingDuration;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = EnemyData)
 	bool alternateAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnemyData)
+	int health;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnemyData)
+	float staggerTimer;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnemyData)
+	float forceStaggerDuration;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnemyData)
 	UCapsuleComponent* weaponCapsule;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = EnemyData)
-	APawn* playerCharacter;
+	AMainCharacterPlayerController* playerCharacter;
 
 	bool addedCapsule;
 
@@ -81,6 +90,8 @@ public:
 	UFUNCTION()
 	void OnWeaponHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	//void OnWeaponHit(const FOverlapInfo& OtherOverlap, bool bDoNotifies);
+
+	void TakeDamageAndStagger(FVector damagePosition, float staggerPotency);
 
 protected:
 
