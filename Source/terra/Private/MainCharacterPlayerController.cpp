@@ -69,7 +69,7 @@ void AMainCharacterPlayerController::SetupPlayerInputComponent(class UInputCompo
 	//InputComponent->BindAction("SetDestination", IE_Pressed, this, &AMainCharacterPlayerController::OnSetDestinationPressed);
 	//InputComponent->BindAction("SetDestination", IE_Released, this, &AMainCharacterPlayerController::OnSetDestinationReleased);
 
-	UE_LOG(LogTemp, Warning, TEXT("Happens"));
+	//UE_LOG(LogTemp, Warning, TEXT("Happens"));
 
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMainCharacterPlayerController::AddXMovement);
 	PlayerInputComponent->BindAxis("MoveUp", this, &AMainCharacterPlayerController::AddYMovement);
@@ -98,7 +98,7 @@ void AMainCharacterPlayerController::Tick(float deltaTime)
 	{
 		if (weaponCapsule != NULL)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s"), *weaponCapsule->GetName());
+			//UE_LOG(LogTemp, Warning, TEXT("%s"), *weaponCapsule->GetName());
 			weaponCapsule->OnComponentBeginOverlap.AddDynamic(this, &AMainCharacterPlayerController::OnWeaponHit);
 			//weaponCapsule->BeginComponentOverlap.AddDynamic(this, &AMainCharacterPlayerController::OnWeaponHit);
 			addedCapsule = true;

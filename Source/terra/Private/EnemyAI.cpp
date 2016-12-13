@@ -32,7 +32,7 @@ void AEnemyAI::BeginPlay()
 	attackWindUpDuration = 1.333f;
 	attackSwingDuration = 1.667f - attackWindUpDuration;
 	alternateAttack = false;
-	health = 3;
+	health = 5;
 	staggerTimer = 0.0f;
 	forceStaggerDuration = 1.0f;
 	addedCapsule = false;
@@ -54,7 +54,7 @@ void AEnemyAI::Tick(float deltaTime)
 	{
 		if (weaponCapsule != NULL)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%s"), *weaponCapsule->GetName());
+			//UE_LOG(LogTemp, Warning, TEXT("%s"), *weaponCapsule->GetName());
 			weaponCapsule->OnComponentBeginOverlap.AddDynamic(this, &AEnemyAI::OnWeaponHit);
 			//weaponCapsule->BeginComponentOverlap.AddDynamic(this, &AEnemyAI::OnWeaponHit);
 			addedCapsule = true;
@@ -223,4 +223,9 @@ void AEnemyAI::TakeDamageAndStagger(FVector damagePosition, float staggerPotency
 	v *= staggerPotency;
 
 	LaunchCharacter(v, true, false);
+
+	if (health <= 0)
+	{
+		Destroy();
+	}
 }
